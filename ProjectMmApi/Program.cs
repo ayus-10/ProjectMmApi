@@ -7,15 +7,27 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
-var jwtConfig = builder.Configuration.GetSection("JwtConfig");
 
+// Retrieve database connection string
+string dbConnectionString = builder.Configuration.GetConnectionString("Default") ??
+    throw new ArgumentNullException(nameof(args), "DB connection string is null");
+
+// Retrieve JWT config
+var jwtConfig = builder.Configuration.GetSection("JwtConfig");
+string jwtKey = jwtConfig["Key"] ?? throw new ArgumentNullException(nameof(args), "JWT key is null");
+string jwtIssuer = jwtConfig["Issuer"] ?? throw new ArgumentNullException(nameof(args), "JWT issuer is null");
+string jwtAudience= jwtConfig["Audience"] ?? throw new ArgumentNullException(nameof(args), "JWT audience is null");
+
+// Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Connect to database
 builder.Services.AddDbContext<ApplicationDbContext>(options => 
-    options.UseMySQL(builder.Configuration.GetConnectionString("Default") ?? String.Empty));
+    options.UseMySQL(dbConnectionString));
 
+// Configure JWT authentication
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -24,9 +36,9 @@ builder.Services.AddAuthentication(options =>
 {
     options.TokenValidationParameters = new TokenValidationParameters()
     {
-        ValidIssuer = jwtConfig["Issuer"],
-        ValidAudience = jwtConfig["Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtConfig["Key"] ?? String.Empty)),
+        ValidIssuer = jwtIssuer,
+        ValidAudience = jwtAudience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
         ValidateIssuer = true,
         ValidateAudience = true,
         ValidateLifetime = true,
@@ -35,7 +47,9 @@ builder.Services.AddAuthentication(options =>
 });
 builder.Services.AddAuthorization();
 
+// Register custom services
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
+builder.Services.AddScoped<ITokenService, TokenService>();
 
 var app = builder.Build();
 
