@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using ProjectMmApi.Data;
 using ProjectMmApi.Interfaces;
 using ProjectMmApi.Models.DTOs;
@@ -22,6 +21,7 @@ namespace ProjectMmApi.Controllers
             _tokenService = tokenService;
         }
 
+        [HttpPost]
         public IActionResult CreateUser(CreateUserDto createUserDto)
         {
             var existingUser = _dbContext.Users.FirstOrDefault(e => e.Email == createUserDto.Email);
@@ -31,12 +31,12 @@ namespace ProjectMmApi.Controllers
                 return BadRequest($"User with the email {existingUser.Email} is already registered.");
             }
 
-            if (Validator.IsValidEmail(createUserDto.Email))
+            if (!Validator.IsValidEmail(createUserDto.Email))
             {
                 return BadRequest($"The email {createUserDto.Email} is not valid.");
             }
 
-            if (Validator.IsStrongPassword(createUserDto.Password))
+            if (!Validator.IsStrongPassword(createUserDto.Password))
             {
                 return BadRequest("Password must be 8+ characters with uppercase, lowercase, digits and no spaces.");
             }
