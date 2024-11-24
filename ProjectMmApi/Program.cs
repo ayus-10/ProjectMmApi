@@ -51,7 +51,7 @@ builder.Services.AddAuthorization();
 // Register custom services
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<ITokenService, TokenService>();
-builder.Services.AddTransient<AuthMiddleware>();
+builder.Services.AddScoped<AuthMiddleware>();
 
 var app = builder.Build();
 

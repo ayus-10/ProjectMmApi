@@ -20,9 +20,9 @@ namespace ProjectMmApi.Utilities
         public static bool IsStrongPassword(string password)
         {
             bool hasMinimumLength = password.Length >= 8;
-            bool hasUppercase = password.Any(c => Char.IsUpper(c));
-            bool hasLowercase = password.Any(c => Char.IsLower(c));
-            bool hasWhiteSpace = password.Any(c => Char.IsWhiteSpace(c));
+            bool hasUppercase = password.Any(c => char.IsUpper(c));
+            bool hasLowercase = password.Any(c => char.IsLower(c));
+            bool hasWhiteSpace = password.Any(c => char.IsWhiteSpace(c));
 
             return hasMinimumLength && hasUppercase && hasLowercase && (!hasWhiteSpace);
         }
