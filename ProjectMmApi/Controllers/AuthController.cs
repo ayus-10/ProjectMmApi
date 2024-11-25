@@ -77,11 +77,17 @@ namespace ProjectMmApi.Controllers
             }
 
             var userId = tokenData.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-            var user = _dbContext.Users.Find(userId);
+
+            if (userId == null || !Guid.TryParse(userId, out Guid userGuid))
+            {
+                return Unauthorized("Could not parse ID.");
+            }
+
+            var user = _dbContext.Users.Find(userGuid);
 
             if (user == null)
             {
-                return NotFound();
+                return NotFound("User not found.");
             }
 
             string newAccessToken = _tokenService.CreateAccessToken(user);
@@ -98,6 +104,17 @@ namespace ProjectMmApi.Controllers
             {
                 accessToken = newAccessToken
             });
+        }
+
+        [HttpPost("logout")]
+        public IActionResult Logout()
+        {
+            Response.Cookies.Append("RefreshToken", "", new CookieOptions()
+            {
+                Expires = DateTimeOffset.UtcNow.AddDays(-1)
+            });
+
+            return Ok();
         }
     }
 }
