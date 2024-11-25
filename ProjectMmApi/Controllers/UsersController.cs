@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ProjectMmApi.Data;
 using ProjectMmApi.Interfaces;
-using ProjectMmApi.Models.DTOs;
+using ProjectMmApi.Models.Dtos;
 using ProjectMmApi.Models.Entities;
 using ProjectMmApi.Utilities;
 
@@ -24,16 +24,21 @@ namespace ProjectMmApi.Controllers
         [HttpPost]
         public IActionResult CreateUser(CreateUserDto createUserDto)
         {
+            if (HttpContext.Items.ContainsKey("IsLoggedIn") && HttpContext.Items["IsLoggedIn"] is bool isLoggedIn && isLoggedIn)
+            {
+                return BadRequest("Already logged in.");
+            }
+
             var existingUser = _dbContext.Users.FirstOrDefault(e => e.Email == createUserDto.Email);
             
             if (existingUser != null)
             {
-                return BadRequest($"User with the email {existingUser.Email} is already registered.");
+                return BadRequest("User with that email already exists.");
             }
 
             if (!Validator.IsValidEmail(createUserDto.Email))
             {
-                return BadRequest($"The email {createUserDto.Email} is not valid.");
+                return BadRequest("The email entered is not valid.");
             }
 
             if (!Validator.IsStrongPassword(createUserDto.Password))

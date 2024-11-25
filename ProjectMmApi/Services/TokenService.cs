@@ -56,6 +56,8 @@ namespace ProjectMmApi.Services
 
         public ClaimsPrincipal? ValidateToken(string token)
         {
+            JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+
             var tokenHandler = new JwtSecurityTokenHandler();
 
             try
