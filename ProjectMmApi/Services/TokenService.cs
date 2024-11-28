@@ -14,9 +14,12 @@ namespace ProjectMmApi.Services
         private readonly string _jwtAudience;
         public TokenService(IConfiguration config)
         {
-            _jwtKey = config["JwtConfig:Key"] ?? throw new ArgumentNullException(nameof(config), "JWT key is null");
-            _jwtIssuer= config["JwtConfig:Issuer"] ?? throw new ArgumentNullException(nameof(config), "JWT Issuer is null");
-            _jwtAudience = config["JwtConfig:Audience"] ?? throw new ArgumentNullException(nameof(config), "JWT Audience is null");
+            _jwtKey = config["JwtConfig:Key"]
+                ?? throw new ArgumentNullException(nameof(config), "JWT key not found in secrets");
+            _jwtIssuer= config["JwtConfig:Issuer"]
+                ?? throw new ArgumentNullException(nameof(config), "JWT issuer not found in secrets");
+            _jwtAudience = config["JwtConfig:Audience"]
+                ?? throw new ArgumentNullException(nameof(config), "JWT audience not found in secrets");
         }
 
         public string CreateAccessToken(User user)

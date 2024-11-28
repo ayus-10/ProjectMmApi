@@ -9,15 +9,20 @@ using ProjectMmApi.Controllers.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add user secrets
+builder.Configuration.AddUserSecrets<Program>();
+
 // Retrieve database connection string
-string dbConnectionString = builder.Configuration.GetConnectionString("Default") ??
-    throw new ArgumentNullException(nameof(args), "DB connection string is null");
+string dbConnectionString = builder.Configuration["ConnectionStrings:Default"] ??
+    throw new ArgumentNullException(nameof(args), "Default connection string not found in secrets");
 
 // Retrieve JWT config
-var jwtConfig = builder.Configuration.GetSection("JwtConfig");
-string jwtKey = jwtConfig["Key"] ?? throw new ArgumentNullException(nameof(args), "JWT key is null");
-string jwtIssuer = jwtConfig["Issuer"] ?? throw new ArgumentNullException(nameof(args), "JWT issuer is null");
-string jwtAudience= jwtConfig["Audience"] ?? throw new ArgumentNullException(nameof(args), "JWT audience is null");
+string jwtKey = builder.Configuration["JwtConfig:Key"]
+    ?? throw new ArgumentNullException(nameof(args), "JWT key not found in secrets");
+string jwtIssuer = builder.Configuration["JwtConfig:Issuer"]
+    ?? throw new ArgumentNullException(nameof(args), "JWT issuer not found in secrets");
+string jwtAudience= builder.Configuration["JwtConfig:Audience"]
+    ?? throw new ArgumentNullException(nameof(args), "JWT audience not found in secrets");
 
 // Add services to the container
 builder.Services.AddControllers();
