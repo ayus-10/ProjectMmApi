@@ -116,5 +116,29 @@ namespace ProjectMmApi.Controllers
 
             return Ok();
         }
+
+        [HttpGet]
+        public IActionResult GetAuthenticatedUser()
+        {
+            var userId = HttpContext.Items["UserId"]?.ToString();
+
+            if (!Guid.TryParse(userId, out Guid userGuid))
+            {
+                return Unauthorized();
+            }
+
+            var user = _dbContext.Users.Find(userGuid);
+
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            return Ok(new
+            {
+                user.Email,
+                user.FullName
+            });
+        }
     }
 }
