@@ -60,29 +60,40 @@ builder.Services.AddScoped<AuthMiddleware>();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-else
+// Enforce HTTPS redirection in production
+if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
 }
 
-app.UseCors(builder =>
-{
-    builder.AllowAnyOrigin();
-    builder.AllowAnyHeader();
-    builder.AllowAnyMethod();
-});
+// Routing at the start of request pipeline
+app.UseRouting();
 
+// Custom middleware followed by authentication and authorization middlewares
 app.UseMiddleware<AuthMiddleware>();
-
 app.UseAuthentication();
-
 app.UseAuthorization();
 
-app.MapControllers();
+// Register controller endpoints
+app.UseEndpoints(endpoints =>
+{
+    _ = endpoints.MapControllers();
+});
+
+// TODO: Use SPA static files in the production build
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+
+    var spaUri = builder.Configuration.GetValue<String>("Spa:Uri")
+        ?? throw new ArgumentNullException(nameof(args), "SPA URI not found");
+
+    app.UseSpa(spa =>
+    {
+        spa.UseProxyToSpaDevelopmentServer(spaUri);
+    });
+}
 
 app.Run();
