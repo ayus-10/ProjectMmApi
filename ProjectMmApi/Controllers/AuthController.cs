@@ -24,11 +24,6 @@ namespace ProjectMmApi.Controllers
         [HttpPost]
         public IActionResult Login(LoginDto loginDto)
         {
-            if (HttpContext.Items.ContainsKey("IsLoggedIn") && HttpContext.Items["IsLoggedIn"] is bool isLoggedIn && isLoggedIn)
-            {
-                return BadRequest("Already logged in.");
-            }
-
             var user = _dbContext.Users.FirstOrDefault(e => e.Email == loginDto.Email);
 
             if (user == null)

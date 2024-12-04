@@ -57,6 +57,7 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<AuthMiddleware>();
+builder.Services.AddScoped<GuardMiddleware>();
 
 var app = builder.Build();
 
@@ -69,10 +70,11 @@ if (!app.Environment.IsDevelopment())
 // Routing at the start of request pipeline
 app.UseRouting();
 
-// Custom middleware followed by authentication and authorization middlewares
-app.UseMiddleware<AuthMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseMiddleware<AuthMiddleware>();
+app.UseMiddleware<GuardMiddleware>();
 
 // Register controller endpoints
 app.UseEndpoints(endpoints =>

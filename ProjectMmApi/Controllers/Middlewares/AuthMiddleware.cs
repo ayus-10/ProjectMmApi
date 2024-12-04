@@ -13,26 +13,27 @@ namespace ProjectMmApi.Controllers.Middlewares
 
         public async Task InvokeAsync(HttpContext context, RequestDelegate next)
         {
-            var tokenStringValues = context.Request.Headers.Authorization;
-            var tokenString = tokenStringValues.FirstOrDefault();
+            var accessTokenString = context.Request.Headers.Authorization.FirstOrDefault();
 
-            if (string.IsNullOrEmpty(tokenString))
+            var refreshToken = context.Request.Cookies["RefreshToken"] ?? null;
+
+            if (string.IsNullOrEmpty(accessTokenString) || string.IsNullOrEmpty(refreshToken))
             {
                 await next(context);
                 return;
             }
             else
             {
-                var tokenStringParts = tokenString.Split(" ");
+                var accessTokenStringParts = accessTokenString.Split(" ");
                 
-                if (tokenStringParts.Length != 2
-                    || !string.Equals(tokenStringParts[0], "Bearer", StringComparison.OrdinalIgnoreCase))
+                if (accessTokenStringParts.Length != 2
+                    || !string.Equals(accessTokenStringParts[0], "Bearer", StringComparison.OrdinalIgnoreCase))
                 {
                     await next(context);
                     return;
                 }
 
-                var tokenData = _tokenService.ValidateToken(tokenStringParts[1]);
+                var tokenData = _tokenService.ValidateToken(accessTokenStringParts[1]);
 
                 if (tokenData != null)
                 {

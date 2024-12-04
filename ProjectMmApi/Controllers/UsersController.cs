@@ -24,11 +24,6 @@ namespace ProjectMmApi.Controllers
         [HttpPost]
         public IActionResult CreateUser(CreateUserDto createUserDto)
         {
-            if (HttpContext.Items.ContainsKey("IsLoggedIn") && HttpContext.Items["IsLoggedIn"] is bool isLoggedIn && isLoggedIn)
-            {
-                return BadRequest("Already logged in.");
-            }
-
             var existingUser = _dbContext.Users.FirstOrDefault(e => e.Email == createUserDto.Email);
             
             if (existingUser != null)
