@@ -13,5 +13,6 @@
         public Guid SenderId { get; set; }
         public Guid ReceiverId { get; set; }
         public RequestStatus Status { get; set; }
+        public DateTime SentAt { get; set; }
     }
 }
