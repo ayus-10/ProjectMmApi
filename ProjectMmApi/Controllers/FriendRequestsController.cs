@@ -22,18 +22,18 @@ namespace ProjectMmApi.Controllers
         {
             if (!Guid.TryParse(HttpContext.Items["UserId"]?.ToString(), out Guid senderGuid))
             {
-                return Unauthorized("Invalid sender ID");
+                return Unauthorized("Invalid sender ID.");
             }
 
             if (!Guid.TryParse(createFriendRequestDto.ReceiverId, out Guid receiverGuid)
                 || _dbContext.Users.Find(receiverGuid) == null)
             {
-                return BadRequest("Invalid receiver ID");
+                return BadRequest("Invalid receiver ID.");
             }
 
             if (senderGuid == receiverGuid)
             {
-                return BadRequest("Can not send request to self");
+                return BadRequest("Can not send request to self.");
             }
 
             var existingSentRequest = _dbContext.FriendRequests.FirstOrDefault(fr =>
@@ -44,18 +44,18 @@ namespace ProjectMmApi.Controllers
 
             if (existingSentRequest != null)
             {
-                return BadRequest("Duplicate requests are not allowed");
+                return BadRequest("Duplicate requests are not allowed.");
             }
 
             if (existingReceivedRequest != null)
             {
                 if (existingReceivedRequest.Status == RequestStatus.Pending)
                 {
-                    return BadRequest("Already received request from the same user");
+                    return BadRequest("Already received request from the same user.");
                 }
                 else if (existingReceivedRequest.Status == RequestStatus.Accepted)
                 {
-                    return BadRequest("Already friends with the user");
+                    return BadRequest("Already friends with the user.");
                 }
             }
 
@@ -70,7 +70,7 @@ namespace ProjectMmApi.Controllers
             _dbContext.FriendRequests.Add(newFriendRequest);
             _dbContext.SaveChanges();
 
-            return Ok("Successfully sent the friend request");
+            return Ok("Successfully sent the friend request.");
         }
 
         [HttpPatch("accept")]
@@ -78,25 +78,25 @@ namespace ProjectMmApi.Controllers
         {
             if (!Guid.TryParse(HttpContext.Items["UserId"]?.ToString(), out Guid senderGuid))
             {
-                return Unauthorized("Invalid sender ID");
+                return Unauthorized("Invalid sender ID.");
             }
 
             if (!Guid.TryParse(acceptFriendRequestDto.ReceiverId, out Guid receiverGuid)
                 || _dbContext.Users.Find(receiverGuid) == null)
             {
-                return BadRequest("Invalid receiver ID");
+                return BadRequest("Invalid receiver ID.");
             }
 
             var request = _dbContext.FriendRequests.FirstOrDefault(fr => fr.SenderId == senderGuid && fr.ReceiverId == receiverGuid);
 
             if (request == null)
             {
-                return BadRequest("Invalid receiver ID");
+                return BadRequest("Invalid receiver ID.");
             }
 
             if (request.Status != RequestStatus.Pending)
             {
-                return BadRequest("Can not accept the request now");
+                return BadRequest("Can not accept the request now.");
             }
 
             request.Status = RequestStatus.Accepted;
@@ -104,7 +104,7 @@ namespace ProjectMmApi.Controllers
             _dbContext.FriendRequests.Update(request);
             _dbContext.SaveChanges();
 
-            return Ok("Successfully accepted the request");
+            return Ok("Successfully accepted the request.");
         }
 
 
@@ -113,25 +113,25 @@ namespace ProjectMmApi.Controllers
         {
             if (!Guid.TryParse(HttpContext.Items["UserId"]?.ToString(), out Guid senderGuid))
             {
-                return Unauthorized("Invalid sender ID");
+                return Unauthorized("Invalid sender ID.");
             }
 
             if (!Guid.TryParse(rejectFriendRequestDto.ReceiverId, out Guid receiverGuid)
                 || _dbContext.Users.Find(receiverGuid) == null)
             {
-                return BadRequest("Invalid receiver ID");
+                return BadRequest("Invalid receiver ID.");
             }
 
             var request = _dbContext.FriendRequests.FirstOrDefault(fr => fr.SenderId == senderGuid && fr.ReceiverId == receiverGuid);
 
             if (request == null)
             {
-                return BadRequest("Invalid receiver ID");
+                return BadRequest("Invalid receiver ID.");
             }
 
             if (request.Status != RequestStatus.Pending)
             {
-                return BadRequest("Can not reject the request now");
+                return BadRequest("Can not reject the request now.");
             }
 
             request.Status = RequestStatus.Rejected;
@@ -139,7 +139,7 @@ namespace ProjectMmApi.Controllers
             _dbContext.FriendRequests.Update(request);
             _dbContext.SaveChanges();
 
-            return Ok("Successfully rejected the request");
+            return Ok("Successfully rejected the request.");
         }
 
         [HttpDelete]
@@ -147,31 +147,31 @@ namespace ProjectMmApi.Controllers
         {
             if (!Guid.TryParse(HttpContext.Items["UserId"]?.ToString(), out Guid senderGuid))
             {
-                return Unauthorized("Invalid sender ID");
+                return Unauthorized("Invalid sender ID.");
             }
 
             if (!Guid.TryParse(cancelFriendRequestDto.ReceiverId, out Guid receiverGuid)
                 || _dbContext.Users.Find(receiverGuid) == null)
             {
-                return BadRequest("Invalid receiver ID");
+                return BadRequest("Invalid receiver ID.");
             }
 
             var request = _dbContext.FriendRequests.FirstOrDefault(fr => fr.SenderId == senderGuid && fr.ReceiverId == receiverGuid);
 
             if (request == null)
             {
-                return BadRequest("Invalid receiver ID");
+                return BadRequest("Invalid receiver ID.");
             }
 
             if (request.Status != RequestStatus.Pending)
             {
-                return BadRequest("Can not cancel the request now");
+                return BadRequest("Can not cancel the request now.");
             }
 
             _dbContext.FriendRequests.Remove(request);
             _dbContext.SaveChanges();
 
-            return Ok("Successfully canceled the request");
+            return Ok("Successfully canceled the request.");
         }
     }
 }

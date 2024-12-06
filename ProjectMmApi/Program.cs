@@ -57,7 +57,6 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<AuthMiddleware>();
-builder.Services.AddScoped<GuardMiddleware>();
 
 var app = builder.Build();
 
@@ -74,7 +73,26 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.UseMiddleware<AuthMiddleware>();
-app.UseMiddleware<GuardMiddleware>();
+
+app.MapWhen(context => context.Request.Path.StartsWithSegments("/api/FriendRequests"),
+    appBranch =>
+    {
+        appBranch.Use(async (context, next) =>
+        {
+            bool isUserLoggedIn = context.Items.ContainsKey("IsLoggedIn")
+                && context.Items["IsLoggedIn"] is bool isLoggedIn
+                && isLoggedIn;
+
+            if (!isUserLoggedIn)
+            {
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                await context.Response.WriteAsync("Please log in to continue.");
+                return;
+            }
+
+            await next();
+        });
+    });
 
 // Register controller endpoints
 app.UseEndpoints(endpoints =>
