@@ -74,7 +74,7 @@ app.UseAuthorization();
 
 app.UseMiddleware<AuthMiddleware>();
 
-app.MapWhen(context => context.Request.Path.StartsWithSegments("/api/FriendRequests"),
+app.MapWhen(context => context.Request.Path.StartsWithSegments("/api/Friends"),
     appBranch =>
     {
         appBranch.Use(async (context, next) =>
@@ -91,6 +91,11 @@ app.MapWhen(context => context.Request.Path.StartsWithSegments("/api/FriendReque
             }
 
             await next();
+        });
+
+        appBranch.UseEndpoints(endpoints =>
+        {
+            endpoints.MapControllers();
         });
     });
 

@@ -7,10 +7,10 @@ namespace ProjectMmApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class FriendRequestsController : ControllerBase
+    public class FriendsController : ControllerBase
     {
         public readonly ApplicationDbContext _dbContext;
-        public FriendRequestsController(ApplicationDbContext dbContext)
+        public FriendsController(ApplicationDbContext dbContext)
         {
             _dbContext = dbContext;
         }
@@ -27,18 +27,18 @@ namespace ProjectMmApi.Controllers
         {
             try
             {
-                var senderGuid = GetSenderGuid();
-                var receiverGuid = GetReceiverGuid(createFriendRequestDto);
+                Guid senderGuid = GetSenderGuid();
+                Guid receiverGuid = GetReceiverGuid(createFriendRequestDto);
 
                 if (senderGuid == receiverGuid)
                 {
                     return BadRequest("Can not send request to self.");
                 }
 
-                var existingSentRequest = _dbContext.FriendRequests.FirstOrDefault(fr =>
+                var existingSentRequest = _dbContext.Friends.FirstOrDefault(fr =>
                     fr.SenderId == senderGuid && fr.ReceiverId == receiverGuid);
 
-                var existingReceivedRequest = _dbContext.FriendRequests.FirstOrDefault(fr =>
+                var existingReceivedRequest = _dbContext.Friends.FirstOrDefault(fr =>
                     fr.ReceiverId == senderGuid && fr.SenderId == receiverGuid);
 
                 if (existingSentRequest != null)
@@ -58,7 +58,7 @@ namespace ProjectMmApi.Controllers
                     }
                 }
 
-                var newFriendRequest = new FriendRequest
+                var newFriendRequest = new Friend
                 {
                     SenderId = senderGuid,
                     ReceiverId = receiverGuid,
@@ -66,7 +66,7 @@ namespace ProjectMmApi.Controllers
                     SentAt = DateTime.UtcNow
                 };
 
-                _dbContext.FriendRequests.Add(newFriendRequest);
+                _dbContext.Friends.Add(newFriendRequest);
                 _dbContext.SaveChanges();
 
                 return Ok("Successfully sent the friend request.");
@@ -135,12 +135,12 @@ namespace ProjectMmApi.Controllers
 
         private IActionResult HandleFriendRequest(HandleFriendRequestDto handleFriendRequestDto, RequestAction action)
         {
-            var senderGuid = GetSenderGuid();
-            var receiverGuid = GetReceiverGuid(handleFriendRequestDto);
+            Guid senderGuid = GetSenderGuid();
+            Guid receiverGuid = GetReceiverGuid(handleFriendRequestDto);
 
-            string actionString = action.ToString().ToLower(); 
+            string actionString = action.ToString().ToLower();
 
-            var request = _dbContext.FriendRequests.FirstOrDefault(fr =>
+            var request = _dbContext.Friends.FirstOrDefault(fr =>
                 fr.SenderId == senderGuid && fr.ReceiverId == receiverGuid);
 
             if (request == null)
@@ -157,20 +157,20 @@ namespace ProjectMmApi.Controllers
             {
                 case RequestAction.Accept:
                     request.Status = RequestStatus.Accepted;
-                    _dbContext.FriendRequests.Update(request);
+                    _dbContext.Friends.Update(request);
                     break;
                 case RequestAction.Reject:
                     request.Status = RequestStatus.Rejected;
-                    _dbContext.FriendRequests.Update(request);
+                    _dbContext.Friends.Update(request);
                     break;
                 case RequestAction.Cancel:
-                    _dbContext.FriendRequests.Remove(request);
+                    _dbContext.Friends.Remove(request);
                     break;
             }
 
             _dbContext.SaveChanges();
 
-            return Ok($"Successfully {actionString} the request.");
+            return Ok($"Successfully {actionString}ed the request.");
         }
 
         private Guid GetSenderGuid()

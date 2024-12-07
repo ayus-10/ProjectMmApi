@@ -4,12 +4,12 @@
     {
         Pending = 0,
         Accepted = 1,
-        Rejected = 2,
+        Rejected = 2
     }
 
-    public class FriendRequest
+    public class Friend
     {
-        public Guid FriendRequestId { get; set; }
+        public Guid FriendId { get; set; }
         public Guid SenderId { get; set; }
         public Guid ReceiverId { get; set; }
         public RequestStatus Status { get; set; }

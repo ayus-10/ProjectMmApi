@@ -8,6 +8,6 @@ namespace ProjectMmApi.Data
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
         public DbSet<User> Users { get; set; }
-        public DbSet<FriendRequest> FriendRequests { get; set; }
+        public DbSet<Friend> Friends { get; set; }
     }
 }
