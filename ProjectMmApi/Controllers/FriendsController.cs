@@ -22,6 +22,121 @@ namespace ProjectMmApi.Controllers
             Cancel = 2
         }
 
+        [HttpGet]
+        public IActionResult GetAllFriendRequests()
+        {
+            try
+            {
+                Guid senderGuid = GetSenderGuid();
+
+                var sentRequests = _dbContext.Friends
+                    .Where(f => f.SenderId == senderGuid && f.Status == RequestStatus.Pending)
+                    .Select(f => new
+                    {
+                        SenderEmail = f.Sender.Email,
+                        SenderFullName = f.Sender.FullName,
+                        ReceiverEmail = f.Receiver.Email,
+                        ReceiverFullName = f.Receiver.FullName,
+                        f.SenderId,
+                        f.ReceiverId,
+                        f.Status,
+                        f.SentAt
+                    })
+                    .ToList();
+
+                var receivedRequests = _dbContext.Friends
+                   .Where(f => f.ReceiverId == senderGuid && f.Status == RequestStatus.Pending)
+                   .Select(f => new
+                   {
+                       SenderEmail = f.Sender.Email,
+                       SenderFullName = f.Sender.FullName,
+                       ReceiverEmail = f.Receiver.Email,
+                       ReceiverFullName = f.Receiver.FullName,
+                       f.SenderId,
+                       f.ReceiverId,
+                       f.Status,
+                       f.SentAt
+                   })
+                   .ToList();
+
+                return Ok(new
+                {
+                    sent = sentRequests,
+                    received = receivedRequests
+                });
+            }
+            catch (UnauthorizedAccessException u)
+            {
+                return Unauthorized(u.Message);
+            }
+        }
+
+        [HttpGet("find")]
+        public IActionResult FindFriend([FromQuery] string email)
+        {
+            try
+            {
+                Guid senderGuid = GetSenderGuid();
+
+                var sender = _dbContext.Users.Find(senderGuid);
+                var userFound = _dbContext.Users.FirstOrDefault(u => u.Email == email);
+
+                if (userFound == null)
+                {
+                    return NotFound("No user found with that email.");
+                }
+
+                var existingSentRequest = _dbContext.Friends
+                    .FirstOrDefault(f => f.SenderId == senderGuid && f.ReceiverId == userFound.Id);
+
+                var existingReceivedRequest = _dbContext.Friends
+                    .FirstOrDefault(f => f.ReceiverId == senderGuid && f.SenderId == userFound.Id);
+
+                var errorMessage = "";
+
+                if (existingReceivedRequest != null)
+                {
+                    if (existingReceivedRequest.Status == RequestStatus.Accepted)
+                    {
+                        errorMessage = "Already friends with the user.";
+                    }
+                    else if (existingReceivedRequest.Status == RequestStatus.Pending)
+                    {
+                        errorMessage = "Already received request from the same user.";
+                    }
+                }
+
+                if (existingSentRequest != null)
+                {
+                    if (existingSentRequest.Status == RequestStatus.Accepted)
+                    {
+                        errorMessage = "Already friends with the user.";
+                    }
+                    else if (existingSentRequest.Status == RequestStatus.Pending)
+                    {
+                        errorMessage = "Already sent request to the same user.";
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    return BadRequest(errorMessage);
+                }
+
+                return Ok(new
+                {
+                    userFound.Id,
+                    userFound.Email,
+                    userFound.FullName
+                });
+
+            }
+            catch (UnauthorizedAccessException u)
+            {
+                return Unauthorized(u.Message);
+            }
+        }
+
         [HttpPost]
         public IActionResult CreateFriendRequest(HandleFriendRequestDto createFriendRequestDto)
         {
@@ -35,11 +150,11 @@ namespace ProjectMmApi.Controllers
                     return BadRequest("Can not send request to self.");
                 }
 
-                var existingSentRequest = _dbContext.Friends.FirstOrDefault(fr =>
-                    fr.SenderId == senderGuid && fr.ReceiverId == receiverGuid);
+                var existingSentRequest = _dbContext.Friends
+                    .FirstOrDefault(f => f.SenderId == senderGuid && f.ReceiverId == receiverGuid);
 
-                var existingReceivedRequest = _dbContext.Friends.FirstOrDefault(fr =>
-                    fr.ReceiverId == senderGuid && fr.SenderId == receiverGuid);
+                var existingReceivedRequest = _dbContext.Friends
+                    .FirstOrDefault(f => f.ReceiverId == senderGuid && f.SenderId == receiverGuid);
 
                 if (existingSentRequest != null)
                 {
@@ -140,8 +255,8 @@ namespace ProjectMmApi.Controllers
 
             string actionString = action.ToString().ToLower();
 
-            var request = _dbContext.Friends.FirstOrDefault(fr =>
-                fr.SenderId == senderGuid && fr.ReceiverId == receiverGuid);
+            var request = _dbContext.Friends
+                .FirstOrDefault(f => f.SenderId == senderGuid && f.ReceiverId == receiverGuid);
 
             if (request == null)
             {
