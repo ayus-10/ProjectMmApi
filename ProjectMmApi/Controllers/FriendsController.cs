@@ -23,6 +23,38 @@ namespace ProjectMmApi.Controllers
         }
 
         [HttpGet]
+        public IActionResult GetAllFriends()
+        {
+            try
+            {
+                Guid senderGuid = GetSenderGuid();
+
+                var friends = _dbContext.Friends
+                    .Where(f => (f.SenderId == senderGuid || f.ReceiverId == senderGuid) && f.Status == RequestStatus.Accepted)
+                    .Select(f => new
+                    {
+                        SenderEmail = f.Sender.Email,
+                        SenderFullName = f.Sender.FullName,
+                        ReceiverEmail = f.Receiver.Email,
+                        ReceiverFullName = f.Receiver.FullName,
+                        f.SenderId,
+                        f.ReceiverId,
+                        f.Status,
+                        f.SentAt,
+                        f.FriendId
+                    })
+                    .ToList();
+
+                return Ok(new { friends });
+
+            }
+            catch (UnauthorizedAccessException u)
+            {
+                return Unauthorized(u.Message);
+            }
+        }
+
+        [HttpGet("requests")]
         public IActionResult GetAllFriendRequests()
         {
             try
@@ -40,7 +72,8 @@ namespace ProjectMmApi.Controllers
                         f.SenderId,
                         f.ReceiverId,
                         f.Status,
-                        f.SentAt
+                        f.SentAt,
+                        f.FriendId
                     })
                     .ToList();
 
@@ -55,7 +88,8 @@ namespace ProjectMmApi.Controllers
                        f.SenderId,
                        f.ReceiverId,
                        f.Status,
-                       f.SentAt
+                       f.SentAt,
+                       f.FriendId
                    })
                    .ToList();
 
