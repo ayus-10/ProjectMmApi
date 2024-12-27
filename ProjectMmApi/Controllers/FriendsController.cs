@@ -218,7 +218,26 @@ namespace ProjectMmApi.Controllers
                 _dbContext.Friends.Add(newFriendRequest);
                 _dbContext.SaveChanges();
 
-                return Ok("Successfully sent the friend request.");
+                var sentRequest = _dbContext.Friends
+                    .Where(f => f.FriendId == newFriendRequest.FriendId)
+                    .Select(f => new
+                    {
+                        SenderEmail = f.Sender.Email,
+                        SenderFullName = f.Sender.FullName,
+                        ReceiverEmail = f.Receiver.Email,
+                        ReceiverFullName = f.Receiver.FullName,
+                        f.SenderId,
+                        f.ReceiverId,
+                        f.Status,
+                        f.SentAt,
+                        f.FriendId
+                    })
+                    .FirstOrDefault();
+
+                return Ok(new
+                {
+                    request = sentRequest
+                });
             }
             catch (UnauthorizedAccessException u)
             {
@@ -319,7 +338,7 @@ namespace ProjectMmApi.Controllers
 
             _dbContext.SaveChanges();
 
-            return Ok($"Successfully {actionString}ed the request.");
+            return Ok();
         }
 
         private Guid GetSenderGuid()
