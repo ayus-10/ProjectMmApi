@@ -1,6 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System;
+using Microsoft.AspNetCore.Mvc;
 using ProjectMmApi.Data;
-using ProjectMmApi.Models.DTOs;
 using ProjectMmApi.Models.Entities;
 
 namespace ProjectMmApi.Controllers
@@ -15,22 +15,15 @@ namespace ProjectMmApi.Controllers
             _dbContext = dbContext;
         }
 
-        public enum RequestAction
-        {
-            Accept = 0,
-            Reject = 1,
-            Cancel = 2
-        }
-
         [HttpGet]
         public IActionResult GetAllFriends()
         {
             try
             {
-                Guid senderGuid = GetSenderGuid();
+                Guid userGuid = GetUserIdFromContext();
 
                 var friends = _dbContext.Friends
-                    .Where(f => (f.SenderId == senderGuid || f.ReceiverId == senderGuid) && f.Status == RequestStatus.Accepted)
+                    .Where(f => (f.SenderId == userGuid || f.ReceiverId == userGuid) && f.Status == RequestStatus.Accepted)
                     .Select(f => new
                     {
                         SenderEmail = f.Sender.Email,
@@ -59,10 +52,10 @@ namespace ProjectMmApi.Controllers
         {
             try
             {
-                Guid senderGuid = GetSenderGuid();
+                Guid userGuid = GetUserIdFromContext();
 
                 var sentRequests = _dbContext.Friends
-                    .Where(f => f.SenderId == senderGuid && f.Status == RequestStatus.Pending)
+                    .Where(f => f.SenderId == userGuid && f.Status == RequestStatus.Pending)
                     .Select(f => new
                     {
                         SenderEmail = f.Sender.Email,
@@ -78,7 +71,7 @@ namespace ProjectMmApi.Controllers
                     .ToList();
 
                 var receivedRequests = _dbContext.Friends
-                   .Where(f => f.ReceiverId == senderGuid && f.Status == RequestStatus.Pending)
+                   .Where(f => f.ReceiverId == userGuid && f.Status == RequestStatus.Pending)
                    .Select(f => new
                    {
                        SenderEmail = f.Sender.Email,
@@ -110,9 +103,8 @@ namespace ProjectMmApi.Controllers
         {
             try
             {
-                Guid senderGuid = GetSenderGuid();
+                Guid userGuid = GetUserIdFromContext();
 
-                var sender = _dbContext.Users.Find(senderGuid);
                 var userFound = _dbContext.Users.FirstOrDefault(u => u.Email == email);
 
                 if (userFound == null)
@@ -121,10 +113,10 @@ namespace ProjectMmApi.Controllers
                 }
 
                 var existingSentRequest = _dbContext.Friends
-                    .FirstOrDefault(f => f.SenderId == senderGuid && f.ReceiverId == userFound.Id);
+                    .FirstOrDefault(f => f.SenderId == userGuid && f.ReceiverId == userFound.Id);
 
                 var existingReceivedRequest = _dbContext.Friends
-                    .FirstOrDefault(f => f.ReceiverId == senderGuid && f.SenderId == userFound.Id);
+                    .FirstOrDefault(f => f.ReceiverId == userGuid && f.SenderId == userFound.Id);
 
                 var errorMessage = "";
 
@@ -172,12 +164,12 @@ namespace ProjectMmApi.Controllers
         }
 
         [HttpPost]
-        public IActionResult CreateFriendRequest(HandleFriendRequestDto createFriendRequestDto)
+        public IActionResult CreateFriendRequest([FromQuery] string receiverId)
         {
             try
             {
-                Guid senderGuid = GetSenderGuid();
-                Guid receiverGuid = GetReceiverGuid(createFriendRequestDto);
+                Guid senderGuid = GetUserIdFromContext();
+                Guid receiverGuid = ValidateUserId(receiverId);
 
                 if (senderGuid == receiverGuid)
                 {
@@ -250,11 +242,20 @@ namespace ProjectMmApi.Controllers
         }
 
         [HttpPatch("accept")]
-        public IActionResult AcceptFriendRequest(HandleFriendRequestDto acceptFriendRequestDto)
+        public IActionResult AcceptFriendRequest([FromQuery] string senderId)
         {
             try
             {
-                return HandleFriendRequest(acceptFriendRequestDto, RequestAction.Accept);
+                Guid receiverGuid = GetUserIdFromContext();
+                Guid senderGuid = ValidateUserId(senderId);
+
+                var request = GetPendingFriendRequest(senderGuid, receiverGuid);
+
+                request.Status = RequestStatus.Accepted;
+                _dbContext.Friends.Update(request);
+                _dbContext.SaveChanges();
+
+                return Ok();
             }
             catch (UnauthorizedAccessException u)
             {
@@ -268,11 +269,20 @@ namespace ProjectMmApi.Controllers
 
 
         [HttpPatch("reject")]
-        public IActionResult RejectFriendRequest(HandleFriendRequestDto rejectFriendRequestDto)
+        public IActionResult RejectFriendRequest([FromQuery] string senderId)
         {
             try
             {
-                return HandleFriendRequest(rejectFriendRequestDto, RequestAction.Reject);
+                Guid receiverGuid = GetUserIdFromContext();
+                Guid senderGuid = ValidateUserId(senderId);
+
+                var request = GetPendingFriendRequest(senderGuid, receiverGuid);
+
+                request.Status = RequestStatus.Rejected;
+                _dbContext.Friends.Update(request);
+                _dbContext.SaveChanges();
+
+                return Ok();
             }
             catch (UnauthorizedAccessException u)
             {
@@ -285,11 +295,19 @@ namespace ProjectMmApi.Controllers
         }
 
         [HttpDelete]
-        public IActionResult CancelFriendRequest(HandleFriendRequestDto cancelFriendRequestDto)
+        public IActionResult CancelFriendRequest([FromQuery] string receiverId)
         {
             try
             {
-                return HandleFriendRequest(cancelFriendRequestDto, RequestAction.Cancel);
+                Guid senderGuid = GetUserIdFromContext();
+                Guid receiverGuid = ValidateUserId(receiverId);
+
+                var request = GetPendingFriendRequest(senderGuid, receiverGuid);
+
+                _dbContext.Friends.Remove(request);
+                _dbContext.SaveChanges();
+
+                return Ok();
             }
             catch (UnauthorizedAccessException u)
             {
@@ -301,65 +319,39 @@ namespace ProjectMmApi.Controllers
             }
         }
 
-        private IActionResult HandleFriendRequest(HandleFriendRequestDto handleFriendRequestDto, RequestAction action)
+        private Guid GetUserIdFromContext()
         {
-            Guid senderGuid = GetSenderGuid();
-            Guid receiverGuid = GetReceiverGuid(handleFriendRequestDto);
-
-            string actionString = action.ToString().ToLower();
-
-            var request = _dbContext.Friends
-                .FirstOrDefault(f => f.SenderId == senderGuid && f.ReceiverId == receiverGuid);
-
-            if (request == null)
+            if (!Guid.TryParse(HttpContext.Items["UserId"]?.ToString(), out Guid userGuid))
             {
-                return BadRequest("Invalid receiver ID.");
+                throw new UnauthorizedAccessException("Please log in.");
             }
+
+            return userGuid;
+        }
+
+        private Guid ValidateUserId(string id)
+        {
+            if (!Guid.TryParse(id, out Guid userGuid)
+                || _dbContext.Users.Find(userGuid) == null)
+            {
+                throw new BadHttpRequestException("Invalid user ID.");
+            }
+
+            return userGuid;
+        }
+
+        private Friend GetPendingFriendRequest(Guid sender, Guid receiver)
+        {
+            var request = _dbContext.Friends
+                    .FirstOrDefault(f => f.SenderId == sender && f.ReceiverId == receiver)
+                    ?? throw new BadHttpRequestException("Invalid user ID.");
 
             if (request.Status != RequestStatus.Pending)
             {
-                return BadRequest($"Can not {actionString} the request now.");
+                throw new BadHttpRequestException("Can not process the request now.");
             }
 
-            switch (action)
-            {
-                case RequestAction.Accept:
-                    request.Status = RequestStatus.Accepted;
-                    _dbContext.Friends.Update(request);
-                    break;
-                case RequestAction.Reject:
-                    request.Status = RequestStatus.Rejected;
-                    _dbContext.Friends.Update(request);
-                    break;
-                case RequestAction.Cancel:
-                    _dbContext.Friends.Remove(request);
-                    break;
-            }
-
-            _dbContext.SaveChanges();
-
-            return Ok();
-        }
-
-        private Guid GetSenderGuid()
-        {
-            if (!Guid.TryParse(HttpContext.Items["UserId"]?.ToString(), out Guid senderGuid))
-            {
-                throw new UnauthorizedAccessException("Invalid sender ID.");
-            }
-
-            return senderGuid;
-        }
-
-        private Guid GetReceiverGuid(HandleFriendRequestDto handleFriendRequestDto)
-        {
-            if (!Guid.TryParse(handleFriendRequestDto.ReceiverId, out Guid receiverGuid)
-                || _dbContext.Users.Find(receiverGuid) == null)
-            {
-                throw new BadHttpRequestException("Invalid receiver ID.");
-            }
-
-            return receiverGuid;
+            return request;
         }
     }
 }
