@@ -9,7 +9,7 @@ namespace ProjectMmApi.Controllers
     [ApiController]
     public class FriendsController : ControllerBase
     {
-        public readonly ApplicationDbContext _dbContext;
+        private readonly ApplicationDbContext _dbContext;
         public FriendsController(ApplicationDbContext dbContext)
         {
             _dbContext = dbContext;
@@ -110,6 +110,11 @@ namespace ProjectMmApi.Controllers
                 if (userFound == null)
                 {
                     return NotFound("No user found with that email.");
+                }
+
+                if (userFound.Id == userGuid)
+                {
+                    return BadRequest("");
                 }
 
                 var existingSentRequest = _dbContext.Friends
