@@ -169,7 +169,7 @@ namespace ProjectMmApi.Controllers
         }
 
         [HttpPost]
-        public IActionResult CreateFriendRequest([FromQuery] string receiverId)
+        public async Task<IActionResult> CreateFriendRequest([FromQuery] string receiverId)
         {
             try
             {
@@ -231,6 +231,8 @@ namespace ProjectMmApi.Controllers
                     })
                     .FirstOrDefault();
 
+                await EventsController.NotifyClients("RequestSent");
+
                 return Ok(new
                 {
                     request = sentRequest
@@ -247,7 +249,7 @@ namespace ProjectMmApi.Controllers
         }
 
         [HttpPatch("accept")]
-        public IActionResult AcceptFriendRequest([FromQuery] string senderId)
+        public async Task<IActionResult> AcceptFriendRequest([FromQuery] string senderId)
         {
             try
             {
@@ -259,6 +261,8 @@ namespace ProjectMmApi.Controllers
                 request.Status = RequestStatus.Accepted;
                 _dbContext.Friends.Update(request);
                 _dbContext.SaveChanges();
+
+                await EventsController.NotifyClients("RequestAccepted");
 
                 return Ok();
             }
@@ -274,7 +278,7 @@ namespace ProjectMmApi.Controllers
 
 
         [HttpPatch("reject")]
-        public IActionResult RejectFriendRequest([FromQuery] string senderId)
+        public async Task<IActionResult> RejectFriendRequest([FromQuery] string senderId)
         {
             try
             {
@@ -286,6 +290,8 @@ namespace ProjectMmApi.Controllers
                 request.Status = RequestStatus.Rejected;
                 _dbContext.Friends.Update(request);
                 _dbContext.SaveChanges();
+
+                await EventsController.NotifyClients("RequestRejected");
 
                 return Ok();
             }
@@ -300,7 +306,7 @@ namespace ProjectMmApi.Controllers
         }
 
         [HttpDelete]
-        public IActionResult CancelFriendRequest([FromQuery] string receiverId)
+        public async Task<IActionResult> CancelFriendRequest([FromQuery] string receiverId)
         {
             try
             {
@@ -311,6 +317,8 @@ namespace ProjectMmApi.Controllers
 
                 _dbContext.Friends.Remove(request);
                 _dbContext.SaveChanges();
+
+                await EventsController.NotifyClients("RequestDeleted");
 
                 return Ok();
             }
