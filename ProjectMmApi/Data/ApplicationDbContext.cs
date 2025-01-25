@@ -38,6 +38,12 @@ namespace ProjectMmApi.Data
                 .HasForeignKey(m => m.ConversationId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<Message>()
+                .HasOne(m => m.Sender)
+                .WithMany(u => u.SentMessages)
+                .HasForeignKey(m => m.SenderId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             base.OnModelCreating(modelBuilder);
         }
     }

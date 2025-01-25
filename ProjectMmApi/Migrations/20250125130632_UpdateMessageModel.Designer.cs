@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ProjectMmApi.Data;
 
@@ -10,9 +11,11 @@ using ProjectMmApi.Data;
 namespace ProjectMmApi.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250125130632_UpdateMessageModel")]
+    partial class UpdateMessageModel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -27,6 +30,15 @@ namespace ProjectMmApi.Migrations
 
                     b.Property<Guid>("FriendId")
                         .HasColumnType("char(36)");
+
+                    b.Property<bool>("IsSeen")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<Guid>("LastMessageId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("LastMessageTime")
+                        .HasColumnType("datetime(6)");
 
                     b.HasKey("ConversationId");
 
@@ -75,15 +87,9 @@ namespace ProjectMmApi.Migrations
                     b.Property<Guid>("ConversationId")
                         .HasColumnType("char(36)");
 
-                    b.Property<bool>("IsSeen")
-                        .HasColumnType("tinyint(1)");
-
                     b.Property<string>("MessageText")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<DateTime>("MessageTime")
-                        .HasColumnType("datetime(6)");
 
                     b.Property<Guid>("SenderId")
                         .HasColumnType("char(36)");
@@ -176,7 +182,8 @@ namespace ProjectMmApi.Migrations
 
             modelBuilder.Entity("ProjectMmApi.Models.Entities.Friend", b =>
                 {
-                    b.Navigation("HasConversation");
+                    b.Navigation("HasConversation")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("ProjectMmApi.Models.Entities.User", b =>

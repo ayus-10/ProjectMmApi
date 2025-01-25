@@ -7,7 +7,8 @@
         public required string Email { get; set; }
         public required string Password { get; set; }
 
-        public ICollection<Friend> SentRequests { get; set; }
-        public ICollection<Friend> ReceivedRequests { get; set; }
+        public ICollection<Friend>? SentRequests { get; set; }
+        public ICollection<Friend>? ReceivedRequests { get; set; }
+        public ICollection<Message>? SentMessages { get; set; }
     }
 }
