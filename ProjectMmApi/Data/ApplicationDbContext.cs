@@ -9,6 +9,7 @@ namespace ProjectMmApi.Data
 
         public DbSet<User> Users { get; set; }
         public DbSet<Friend> Friends { get; set; }
+        public DbSet<Conversation> Conversations { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -22,6 +23,12 @@ namespace ProjectMmApi.Data
                 .HasOne(f => f.Receiver)
                 .WithMany(u => u.ReceivedRequests)
                 .HasForeignKey(f => f.ReceiverId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Friend>()
+                .HasOne(f => f.HasConversation)
+                .WithOne(c => c.ByFriend)
+                .HasForeignKey<Conversation>(c => c.FriendId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             base.OnModelCreating(modelBuilder);

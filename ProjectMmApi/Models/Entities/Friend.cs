@@ -12,10 +12,12 @@
         public Guid FriendId { get; set; }
         public Guid SenderId { get; set; }
         public Guid ReceiverId { get; set; }
+        public Guid ConversationId { get; set; }
         public RequestStatus Status { get; set; }
         public DateTime SentAt { get; set; }
 
         public User Sender { get; set; }
         public User Receiver { get; set; }
+        public Conversation HasConversation { get; set; }
     }
 }

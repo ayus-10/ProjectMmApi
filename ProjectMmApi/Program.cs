@@ -21,7 +21,7 @@ string jwtKey = builder.Configuration["JwtConfig:Key"]
     ?? throw new ArgumentNullException(nameof(args), "JWT key not found in secrets");
 string jwtIssuer = builder.Configuration["JwtConfig:Issuer"]
     ?? throw new ArgumentNullException(nameof(args), "JWT issuer not found in secrets");
-string jwtAudience= builder.Configuration["JwtConfig:Audience"]
+string jwtAudience = builder.Configuration["JwtConfig:Audience"]
     ?? throw new ArgumentNullException(nameof(args), "JWT audience not found in secrets");
 
 // Add services to the container
@@ -30,7 +30,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Connect to database
-builder.Services.AddDbContext<ApplicationDbContext>(options => 
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseMySQL(dbConnectionString));
 
 // Configure JWT authentication
