@@ -1,5 +1,4 @@
-﻿using System;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using ProjectMmApi.Data;
 using ProjectMmApi.Models.Entities;
 
@@ -26,10 +25,10 @@ namespace ProjectMmApi.Controllers
                     .Where(f => (f.SenderId == userGuid || f.ReceiverId == userGuid) && f.Status == RequestStatus.Accepted)
                     .Select(f => new
                     {
-                        SenderEmail = f.Sender.Email,
-                        SenderFullName = f.Sender.FullName,
-                        ReceiverEmail = f.Receiver.Email,
-                        ReceiverFullName = f.Receiver.FullName,
+                        SenderEmail = f.Sender != null ? f.Sender.Email : null,
+                        SenderFullName = f.Sender != null ? f.Sender.FullName : null,
+                        ReceiverEmail = f.Receiver != null ? f.Receiver.Email : null,
+                        ReceiverFullName = f.Receiver != null ? f.Receiver.FullName : null,
                         f.SenderId,
                         f.ReceiverId,
                         f.Status,
@@ -58,10 +57,10 @@ namespace ProjectMmApi.Controllers
                     .Where(f => f.SenderId == userGuid && f.Status == RequestStatus.Pending)
                     .Select(f => new
                     {
-                        SenderEmail = f.Sender.Email,
-                        SenderFullName = f.Sender.FullName,
-                        ReceiverEmail = f.Receiver.Email,
-                        ReceiverFullName = f.Receiver.FullName,
+                        SenderEmail = f.Sender != null ? f.Sender.Email : null,
+                        SenderFullName = f.Sender != null ? f.Sender.FullName : null,
+                        ReceiverEmail = f.Receiver != null ? f.Receiver.Email : null,
+                        ReceiverFullName = f.Receiver != null ? f.Receiver.FullName : null,
                         f.SenderId,
                         f.ReceiverId,
                         f.Status,
@@ -74,10 +73,10 @@ namespace ProjectMmApi.Controllers
                    .Where(f => f.ReceiverId == userGuid && f.Status == RequestStatus.Pending)
                    .Select(f => new
                    {
-                       SenderEmail = f.Sender.Email,
-                       SenderFullName = f.Sender.FullName,
-                       ReceiverEmail = f.Receiver.Email,
-                       ReceiverFullName = f.Receiver.FullName,
+                       SenderEmail = f.Sender != null ? f.Sender.Email : null,
+                       SenderFullName = f.Sender != null ? f.Sender.FullName : null,
+                       ReceiverEmail = f.Receiver != null ? f.Receiver.Email : null,
+                       ReceiverFullName = f.Receiver != null ? f.Receiver.FullName : null,
                        f.SenderId,
                        f.ReceiverId,
                        f.Status,
@@ -219,10 +218,10 @@ namespace ProjectMmApi.Controllers
                     .Where(f => f.FriendId == newFriendRequest.FriendId)
                     .Select(f => new
                     {
-                        SenderEmail = f.Sender.Email,
-                        SenderFullName = f.Sender.FullName,
-                        ReceiverEmail = f.Receiver.Email,
-                        ReceiverFullName = f.Receiver.FullName,
+                        SenderEmail = f.Sender != null ? f.Sender.Email : null,
+                        SenderFullName = f.Sender != null ? f.Sender.FullName : null,
+                        ReceiverEmail = f.Receiver != null ? f.Receiver.Email : null,
+                        ReceiverFullName = f.Receiver != null ? f.Receiver.FullName : null,
                         f.SenderId,
                         f.ReceiverId,
                         f.Status,
