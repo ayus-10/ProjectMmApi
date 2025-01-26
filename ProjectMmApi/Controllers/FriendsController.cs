@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ProjectMmApi.Data;
 using ProjectMmApi.Models.Entities;
+using ProjectMmApi.Utilities;
 
 namespace ProjectMmApi.Controllers
 {
@@ -19,7 +20,7 @@ namespace ProjectMmApi.Controllers
         {
             try
             {
-                Guid userGuid = GetUserIdFromContext();
+                Guid userGuid = Helper.GetUserIdFromContext(HttpContext);
 
                 var friends = _dbContext.Friends
                     .Where(f => (f.SenderId == userGuid || f.ReceiverId == userGuid) && f.Status == RequestStatus.Accepted)
@@ -51,7 +52,7 @@ namespace ProjectMmApi.Controllers
         {
             try
             {
-                Guid userGuid = GetUserIdFromContext();
+                Guid userGuid = Helper.GetUserIdFromContext(HttpContext);
 
                 var sentRequests = _dbContext.Friends
                     .Where(f => f.SenderId == userGuid && f.Status == RequestStatus.Pending)
@@ -102,7 +103,7 @@ namespace ProjectMmApi.Controllers
         {
             try
             {
-                Guid userGuid = GetUserIdFromContext();
+                Guid userGuid = Helper.GetUserIdFromContext(HttpContext);
 
                 var userFound = _dbContext.Users.FirstOrDefault(u => u.Email == email);
 
@@ -172,8 +173,8 @@ namespace ProjectMmApi.Controllers
         {
             try
             {
-                Guid senderGuid = GetUserIdFromContext();
-                Guid receiverGuid = ValidateUserId(receiverId);
+                Guid senderGuid = Helper.GetUserIdFromContext(HttpContext);
+                Guid receiverGuid = Helper.ValidateUserId(receiverId, _dbContext);
 
                 if (senderGuid == receiverGuid)
                 {
@@ -252,8 +253,8 @@ namespace ProjectMmApi.Controllers
         {
             try
             {
-                Guid receiverGuid = GetUserIdFromContext();
-                Guid senderGuid = ValidateUserId(senderId);
+                Guid receiverGuid = Helper.GetUserIdFromContext(HttpContext);
+                Guid senderGuid = Helper.ValidateUserId(senderId, _dbContext);
 
                 var request = GetPendingFriendRequest(senderGuid, receiverGuid);
 
@@ -281,8 +282,8 @@ namespace ProjectMmApi.Controllers
         {
             try
             {
-                Guid receiverGuid = GetUserIdFromContext();
-                Guid senderGuid = ValidateUserId(senderId);
+                Guid receiverGuid = Helper.GetUserIdFromContext(HttpContext);
+                Guid senderGuid = Helper.ValidateUserId(senderId, _dbContext);
 
                 var request = GetPendingFriendRequest(senderGuid, receiverGuid);
 
@@ -309,8 +310,8 @@ namespace ProjectMmApi.Controllers
         {
             try
             {
-                Guid senderGuid = GetUserIdFromContext();
-                Guid receiverGuid = ValidateUserId(receiverId);
+                Guid senderGuid = Helper.GetUserIdFromContext(HttpContext);
+                Guid receiverGuid = Helper.ValidateUserId(receiverId, _dbContext);
 
                 var request = GetPendingFriendRequest(senderGuid, receiverGuid);
 
@@ -329,27 +330,6 @@ namespace ProjectMmApi.Controllers
             {
                 return BadRequest(b.Message);
             }
-        }
-
-        private Guid GetUserIdFromContext()
-        {
-            if (!Guid.TryParse(HttpContext.Items["UserId"]?.ToString(), out Guid userGuid))
-            {
-                throw new UnauthorizedAccessException("Please log in.");
-            }
-
-            return userGuid;
-        }
-
-        private Guid ValidateUserId(string id)
-        {
-            if (!Guid.TryParse(id, out Guid userGuid)
-                || _dbContext.Users.Find(userGuid) == null)
-            {
-                throw new BadHttpRequestException("Invalid user ID.");
-            }
-
-            return userGuid;
         }
 
         private Friend GetPendingFriendRequest(Guid sender, Guid receiver)
