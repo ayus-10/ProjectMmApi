@@ -24,5 +24,16 @@ namespace ProjectMmApi.Utilities
 
             return userGuid;
         }
+
+        public static Guid ValidateConversationId(string id, ApplicationDbContext dbContext)
+        {
+            if (!Guid.TryParse(id, out Guid conversationGuid)
+                || dbContext.Conversations.Find(conversationGuid) == null)
+            {
+                throw new BadHttpRequestException("Invalid conversation ID.");
+            }
+
+            return conversationGuid;
+        }
     }
 }
