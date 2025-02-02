@@ -1,4 +1,5 @@
 using ProjectMmApi.Data;
+using ProjectMmApi.Models.Entities;
 
 namespace ProjectMmApi.Utilities
 {
@@ -25,15 +26,34 @@ namespace ProjectMmApi.Utilities
             return userGuid;
         }
 
-        public static Guid ValidateConversationId(string id, ApplicationDbContext dbContext)
+        public static Guid ValidateConversationId(string id, ApplicationDbContext dbContext, Guid userGuid)
         {
-            if (!Guid.TryParse(id, out Guid conversationGuid)
-                || dbContext.Conversations.Find(conversationGuid) == null)
+            if (!Guid.TryParse(id, out Guid conversationGuid))
             {
                 throw new BadHttpRequestException("Invalid conversation ID.");
             }
 
+            var conversation = dbContext.Conversations
+                .FirstOrDefault(c => c.ConversationId == conversationGuid &&
+                                     c.ByFriend != null &&
+                                     (c.ByFriend.SenderId == userGuid || c.ByFriend.ReceiverId == userGuid))
+                ?? throw new BadHttpRequestException("You are not allowed to chat in this conversation.");
+
             return conversationGuid;
+        }
+
+        public static Message GetValidMessage(string id, Guid conversationGuid, ApplicationDbContext dbContext)
+        {
+            if (!Guid.TryParse(id, out Guid messageGuid))
+            {
+                throw new BadHttpRequestException("Invalid message ID.");
+            }
+
+            var message = dbContext.Messages
+                .FirstOrDefault(m => m.ConversationId == conversationGuid)
+                ?? throw new BadHttpRequestException("You are not allowed to interact with this message.");
+
+            return message;
         }
     }
 }

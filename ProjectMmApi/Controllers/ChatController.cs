@@ -68,15 +68,11 @@ namespace ProjectMmApi.Controllers
         {
             try
             {
-                var conversationGuid = Helper.ValidateConversationId(sendMessageDto.ConversationId, _dbContext);
                 var messageSenderGuid = Helper.GetUserIdFromContext(HttpContext);
-
-                var conversation = _dbContext.Conversations.Find(conversationGuid);
-                if (conversation?.ByFriend?.SenderId != messageSenderGuid ||
-                    conversation?.ByFriend?.ReceiverId != messageSenderGuid)
-                {
-                    return BadRequest("You are not allowed chat in this conversation.");
-                }
+                var conversationGuid = Helper.ValidateConversationId(
+                    sendMessageDto.ConversationId,
+                    _dbContext,
+                    messageSenderGuid);
 
                 var newMessage = new Message()
                 {
@@ -136,7 +132,61 @@ namespace ProjectMmApi.Controllers
             }
         }
 
-        // get all messages for a convo: convoId (get)
-        // make message seen: messageId (patch)
+        [HttpGet("messages")]
+        public IActionResult GetConversationMessages([FromQuery] string conversationId)
+        {
+            try
+            {
+                var userGuid = Helper.GetUserIdFromContext(HttpContext);
+                var conversationGuid = Helper.ValidateConversationId(
+                    conversationId,
+                    _dbContext,
+                    userGuid);
+
+                var messages = _dbContext.Conversations
+                    .Where(c => c.ConversationId == conversationGuid)
+                    .Select(c => c.Messages)
+                    .ToList();
+
+                return Ok(new { messages });
+            }
+            catch (UnauthorizedAccessException u)
+            {
+                return Unauthorized(u.Message);
+            }
+            catch (BadHttpRequestException b)
+            {
+                return BadRequest(b.Message);
+            }
+        }
+
+        [HttpPatch("seen")]
+        public IActionResult MarkMessageSeen([FromQuery] string messageId, [FromQuery] string conversationId)
+        {
+            try
+            {
+                var userGuid = Helper.GetUserIdFromContext(HttpContext);
+                var conversationGuid = Helper.ValidateConversationId(
+                    conversationId,
+                    _dbContext,
+                    userGuid);
+
+                var message = Helper.GetValidMessage(messageId, conversationGuid, _dbContext);
+                message.IsSeen = true;
+
+                _dbContext.Messages.Update(message);
+                _dbContext.SaveChanges();
+
+                return Ok();
+            }
+            catch (UnauthorizedAccessException u)
+            {
+                return Unauthorized(u.Message);
+            }
+            catch (BadHttpRequestException b)
+            {
+                return BadRequest(b.Message);
+            }
+        }
     }
 }
