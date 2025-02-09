@@ -112,15 +112,24 @@ namespace ProjectMmApi.Controllers
                                 (c.ByFriend.SenderId == userGuid || c.ByFriend.ReceiverId == userGuid))
                     .Select(c => new
                     {
-                        ReceiverName = c.ByFriend!.SenderId == userGuid
-                            ? c.ByFriend.Receiver!.FullName
-                            : c.ByFriend.Sender!.FullName,
-                        ReceiverEmail = c.ByFriend.SenderId == userGuid
-                            ? c.ByFriend.Receiver!.Email
-                            : c.ByFriend.Sender!.Email,
+                        Receiver = c.ByFriend!.SenderId == userGuid
+                            ? c.ByFriend.Receiver
+                            : c.ByFriend.Sender,
                         Message = c.Messages != null
                             ? c.Messages.OrderByDescending(m => m.MessageTime).FirstOrDefault()
                             : null
+                    })
+                    .Select(x => new
+                    {
+                        ReceiverName = x.Receiver!.FullName,
+                        ReceiverEmail = x.Receiver!.Email,
+                        Message = new
+                        {
+                            x.Message!.MessageTime,
+                            x.Message!.IsSeen,
+                            LastMessage = x.Message!.MessageText,
+                            SentBy = x.Message!.Sender!.Email
+                        }
                     })
                     .ToList();
 
